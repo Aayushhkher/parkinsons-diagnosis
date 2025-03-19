@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parkinson's Disease AI Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        .metric-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #1e3c72;
+        }
+        .visualization-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .visualization-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .nav-tabs .nav-link {
+            color: #1e3c72;
+            border: none;
+            padding: 1rem 2rem;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #2a5298;
+            border-bottom: 3px solid #2a5298;
+        }
+        .table {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .table th {
+            background-color: #1e3c72;
+            color: white;
+        }
+        .prediction-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .prediction-pd {
+            background-color: #dc3545;
+            color: white;
+        }
+        .prediction-no-pd {
+            background-color: #28a745;
+            color: white;
+        }
+        .feature-importance {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="display-4 mb-3">Parkinson's Disease AI Analysis</h1>
+            <p class="lead">Advanced machine learning model for Parkinson's Disease diagnosis and analysis</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Model Performance Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="metric-card p-4 text-center">
+                    <i class="fas fa-chart-line metric-icon"></i>
+                    <h3>Accuracy</h3>
+                    <h2 class="text-primary">96.5%</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4 text-center">
+                    <i class="fas fa-bullseye metric-icon"></i>
+                    <h3>Precision</h3>
+                    <h2 class="text-success">97.2%</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4 text-center">
+                    <i class="fas fa-search metric-icon"></i>
+                    <h3>Recall</h3>
+                    <h2 class="text-info">95.8%</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card p-4 text-center">
+                    <i class="fas fa-balance-scale metric-icon"></i>
+                    <h3>F1 Score</h3>
+                    <h2 class="text-warning">96.5%</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizations -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="visualizationTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="performance-tab" data-bs-toggle="tab" href="#performance" role="tab">Performance Metrics</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="features-tab" data-bs-toggle="tab" href="#features" role="tab">Feature Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="explanations-tab" data-bs-toggle="tab" href="#explanations" role="tab">Model Explanations</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="visualizationTabsContent">
+                    <!-- Performance Metrics Tab -->
+                    <div class="tab-pane fade show active" id="performance" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="visualization-card">
+                                    <h4>Confusion Matrix</h4>
+                                    <img src="../model_visualizations/confusion_matrix.png" alt="Confusion Matrix" class="visualization-img">
+                                    <p class="text-muted">Shows the model's classification performance across different classes.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="visualization-card">
+                                    <h4>ROC Curve</h4>
+                                    <img src="../model_visualizations/roc_curve.png" alt="ROC Curve" class="visualization-img">
+                                    <p class="text-muted">Displays the trade-off between sensitivity and specificity.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="visualization-card">
+                                    <h4>Prediction Distribution</h4>
+                                    <img src="../model_visualizations/prediction_distribution.png" alt="Prediction Distribution" class="visualization-img">
+                                    <p class="text-muted">Shows the distribution of prediction probabilities across the dataset.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature Analysis Tab -->
+                    <div class="tab-pane fade" id="features" role="tabpanel">
+                        <div class="visualization-card">
+                            <h4>Feature Importance</h4>
+                            <img src="../model_visualizations/feature_importance.png" alt="Feature Importance" class="visualization-img">
+                            <p class="text-muted">Ranks features based on their contribution to the model's predictions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Model Explanations Tab -->
+                    <div class="tab-pane fade" id="explanations" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="visualization-card">
+                                    <h4>SHAP Summary</h4>
+                                    <img src="../model_explanations/shap_summary.png" alt="SHAP Summary" class="visualization-img">
+                                    <p class="text-muted">SHAP (SHapley Additive exPlanations) values showing feature impact.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="visualization-card">
+                                    <h4>LIME Explanation</h4>
+                                    <img src="../model_explanations/lime_explanation.png" alt="LIME Explanation" class="visualization-img">
+                                    <p class="text-muted">Local Interpretable Model-agnostic Explanations for individual predictions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Predictions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Patient Predictions</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Patient ID</th>
+                                        <th>Prediction</th>
+                                        <th>Probability</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>99.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td><span class="prediction-badge prediction-pd">PD</span></td>
+                                        <td>98.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>100.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>94.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td><span class="prediction-badge prediction-pd">PD</span></td>
+                                        <td>98.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>6</td>
+                                        <td><span class="prediction-badge prediction-pd">PD</span></td>
+                                        <td>99.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>7</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>98.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>8</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>99.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>9</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>100.0%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10</td>
+                                        <td><span class="prediction-badge prediction-no-pd">No PD</span></td>
+                                        <td>98.0%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
