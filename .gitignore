@@ -88,4 +88,7 @@ ml/features/saved/*
 *.xls
 *.json
 !package.json
-!package-lock.json 
+!package-lock.json
+
+# New additions from the code block
+kaggle_data/ 

@@ -1,0 +1,15 @@
+{
+  "name": "parkinsons-diagnosis",
+  "version": "1.0.0",
+  "description": "AI-powered system for early detection of Parkinson's Disease using voice analysis",
+  "scripts": {
+    "start": "vercel dev",
+    "deploy": "vercel deploy --prod"
+  },
+  "author": "Aayush Kher",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "^5.3.0",
+    "chart.js": "^4.0.0"
+  }
+} 
