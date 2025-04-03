@@ -377,24 +377,31 @@
                             <div class="col-md-6">
                                 <div class="visualization-card">
                                     <h4 class="visualization-title">Confusion Matrix</h4>
-                                    <p class="visualization-description">A detailed view of the model's classification performance, showing true positives, false positives, true negatives, and false negatives.</p>
-                                    <img src="../model_visualizations/confusion_matrix.png" alt="Confusion Matrix" class="visualization-img">
+                                    <p class="visualization-description">Shows the model's prediction accuracy across different classes, helping identify true positives, false positives, true negatives, and false negatives.</p>
+                                    <img src="/model_visualizations/confusion_matrix.png" alt="Confusion Matrix" class="visualization-img">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="visualization-card">
                                     <h4 class="visualization-title">ROC Curve</h4>
-                                    <p class="visualization-description">The Receiver Operating Characteristic curve showing the trade-off between sensitivity and specificity at different classification thresholds.</p>
-                                    <img src="../model_visualizations/roc_curve.png" alt="ROC Curve" class="visualization-img">
+                                    <p class="visualization-description">Displays the trade-off between true positive rate and false positive rate at different classification thresholds.</p>
+                                    <img src="/model_visualizations/roc_curve.png" alt="ROC Curve" class="visualization-img">
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <div class="visualization-card">
                                     <h4 class="visualization-title">Prediction Distribution</h4>
-                                    <p class="visualization-description">Distribution of prediction probabilities across the dataset, showing how confident the model is in its predictions for both PD and No PD cases.</p>
-                                    <img src="../model_visualizations/prediction_distribution.png" alt="Prediction Distribution" class="visualization-img">
+                                    <p class="visualization-description">Shows the distribution of prediction probabilities across the dataset, indicating model confidence in its predictions.</p>
+                                    <img src="/model_visualizations/prediction_distribution.png" alt="Prediction Distribution" class="visualization-img">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="visualization-card">
+                                    <h4 class="visualization-title">Feature Importance Analysis</h4>
+                                    <p class="visualization-description">Ranks the voice characteristics based on their contribution to the model's predictions.</p>
+                                    <img src="/model_visualizations/feature_importance.png" alt="Feature Importance" class="visualization-img">
                                 </div>
                             </div>
                         </div>
@@ -408,7 +415,7 @@
                                     <h4 class="visualization-title">Feature Importance Analysis</h4>
                                     <p class="visualization-description">Comprehensive analysis of voice characteristics and their impact on Parkinson's Disease detection. The visualization shows the relative importance of each feature in predicting PD.</p>
                                     <div class="feature-importance-container">
-                                        <img src="../model_visualizations/feature_importance.png" alt="Feature Importance" class="visualization-img">
+                                        <img src="/model_visualizations/feature_importance.png" alt="Feature Importance" class="visualization-img">
                                         <div class="feature-importance-legend">
                                             <div class="legend-item">
                                                 <span class="legend-color high"></span>
@@ -543,14 +550,14 @@
                                 <div class="visualization-card">
                                     <h4 class="visualization-title">SHAP Summary</h4>
                                     <p class="visualization-description">SHAP (SHapley Additive exPlanations) values showing how each feature contributes to individual predictions, providing detailed insights into the model's decision-making process.</p>
-                                    <img src="../model_explanations/shap_summary.png" alt="SHAP Summary" class="visualization-img">
+                                    <img src="/model_explanations/shap_summary.png" alt="SHAP Summary" class="visualization-img">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="visualization-card">
                                     <h4 class="visualization-title">LIME Explanation</h4>
                                     <p class="visualization-description">Local Interpretable Model-agnostic Explanations showing how the model makes predictions for individual cases, making the model's decisions more transparent.</p>
-                                    <img src="../model_explanations/lime_explanation.png" alt="LIME Explanation" class="visualization-img">
+                                    <img src="/model_explanations/lime_explanation.png" alt="LIME Explanation" class="visualization-img">
                                 </div>
                             </div>
                         </div>

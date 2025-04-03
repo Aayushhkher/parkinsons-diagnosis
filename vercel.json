@@ -4,9 +4,25 @@
         {
             "src": "frontend/**",
             "use": "@vercel/static"
+        },
+        {
+            "src": "model_visualizations/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "model_explanations/**",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
+        {
+            "src": "/model_visualizations/(.*)",
+            "dest": "/model_visualizations/$1"
+        },
+        {
+            "src": "/model_explanations/(.*)",
+            "dest": "/model_explanations/$1"
+        },
         {
             "src": "/(.*)",
             "dest": "/frontend/$1"
