@@ -1,91 +1,55 @@
-# Parkinson's Disease AI Diagnosis
+# Parkinson's Disease Detection System
 
-An advanced machine learning model for Parkinson's Disease diagnosis and analysis, featuring a modern web interface for visualization and interpretation of results.
+An AI-powered system for early detection of Parkinson's Disease using voice analysis.
 
 ## Features
 
-- Machine learning model with 94-98% accuracy
-- Interactive web interface for result visualization
-- Comprehensive model explanations using SHAP and LIME
-- Feature importance analysis
-- Patient prediction system with probability scores
-- Real-time performance metrics
+- Voice analysis for PD detection
+- Machine learning model with 89.7% accuracy
+- Comprehensive feature importance analysis
+- Interactive visualizations
+- Detailed project documentation
+
+## Tech Stack
+
+- Python (Backend)
+- HTML/CSS/JavaScript (Frontend)
+- Scikit-learn (Machine Learning)
+- Bootstrap (UI Framework)
 
 ## Project Structure
 
 ```
 parkinsons/
 ├── backend/
-│   ├── ml/
-│   │   ├── features/
-│   │   ├── models/
-│   │   └── explainability/
-│   └── api/
+│   └── ml/
+│       ├── features/
+│       └── models/
 ├── frontend/
 │   └── index.html
 ├── model_visualizations/
-├── model_explanations/
 ├── run_model.py
-└── serve_frontend.py
+└── vercel.json
 ```
 
-## Setup and Installation
+## Deployment
 
-1. Clone the repository:
+This project is deployed on Vercel. To deploy:
+
+1. Install Vercel CLI:
 ```bash
-git clone https://github.com/Aayushhkher/parkinsons-diagnosis.git
-cd parkinsons-diagnosis
+npm install -g vercel
 ```
 
-2. Create and activate a virtual environment:
+2. Deploy to Vercel:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+vercel
 ```
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## Live Demo
 
-## Usage
-
-1. Run the model:
-```bash
-python run_model.py
-```
-
-2. Start the frontend server:
-```bash
-python serve_frontend.py
-```
-
-3. Open your browser and navigate to:
-```
-http://localhost:3000
-```
-
-## Model Performance
-
-- Accuracy: 96.5%
-- Precision: 97.2%
-- Recall: 95.8%
-- F1 Score: 96.5%
-
-## Visualizations
-
-The project includes several visualizations:
-- Confusion Matrix
-- ROC Curve
-- Prediction Distribution
-- Feature Importance
-- SHAP Summary
-- LIME Explanations
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+Visit [https://parkinsons-diagnosis.vercel.app](https://parkinsons-diagnosis.vercel.app) to see the live demo.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+MIT License 
