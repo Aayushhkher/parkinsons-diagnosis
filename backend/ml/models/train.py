@@ -34,8 +34,26 @@ class ModelTrainer:
         }
     
     def train_rf(self, X: pd.DataFrame, y: np.ndarray) -> Dict[str, Any]:
-        """Train Random Forest model."""
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        """Train Random Forest model with optimized parameters."""
+        # Create an optimized Random Forest model
+        model = RandomForestClassifier(
+            n_estimators=500,  # Increased number of trees
+            max_depth=15,      # Increased max depth
+            min_samples_split=2,
+            min_samples_leaf=1,
+            max_features='sqrt',  # Use sqrt of features for each split
+            bootstrap=True,
+            class_weight='balanced',  # Handle class imbalance
+            random_state=42,
+            n_jobs=-1  # Use all CPU cores
+        )
+        
+        # Perform cross-validation before final training
+        cv_scores = cross_val_score(model, X, y, cv=5, scoring='f1')
+        print(f"Cross-validation F1 scores: {cv_scores}")
+        print(f"Mean CV F1 score: {cv_scores.mean():.3f} (+/- {cv_scores.std() * 2:.3f})")
+        
+        # Train the final model
         model.fit(X, y)
         self.models['rf'] = model
         
@@ -52,7 +70,8 @@ class ModelTrainer:
         return {
             'model': model,
             'metrics': metrics,
-            'feature_importance': self.feature_importance.to_dict('records')
+            'feature_importance': self.feature_importance.to_dict('records'),
+            'cv_scores': cv_scores.tolist()
         }
     
     def train_nn(self, X: pd.DataFrame, y: np.ndarray) -> Dict[str, Any]:

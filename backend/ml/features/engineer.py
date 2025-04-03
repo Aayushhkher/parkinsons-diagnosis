@@ -1,47 +1,124 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
 from typing import Dict, List, Any, Tuple
 
 class FeatureEngineer:
-    def __init__(self, n_components: float = 0.95):
-        """Initialize the feature engineering pipeline."""
-        self.n_components = n_components
-        self.scaler = StandardScaler()
-        self.pca = PCA(n_components=n_components)
+    def __init__(self):
+        self.scaler = RobustScaler()  # More robust to outliers than StandardScaler
+        self.pca = PCA(n_components=0.95)  # Keep 95% of variance
         self.variance_threshold = VarianceThreshold()
+        self.is_fitted = False
+        self.interaction_pairs = []
+        self.feature_names = None
         
-    def preprocess_data(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Preprocess the input data."""
+    def preprocess_data(self, X: pd.DataFrame, is_training: bool = False) -> pd.DataFrame:
+        """
+        Preprocess the input features with advanced feature engineering.
+        
+        Args:
+            X: Input feature matrix
+            is_training: Whether this is training data
+            
+        Returns:
+            Processed feature matrix
+        """
         # Create a copy to avoid modifying the original data
-        processed_data = data.copy()
+        X_processed = X.copy()
         
-        # Ensure data is numeric
-        processed_data = processed_data.astype(float)
+        # 1. Handle outliers using IQR method
+        for column in X_processed.columns:
+            Q1 = X_processed[column].quantile(0.25)
+            Q3 = X_processed[column].quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+            X_processed[column] = X_processed[column].clip(lower_bound, upper_bound)
         
-        # Scale the data
-        processed_data = pd.DataFrame(
-            self.scaler.fit_transform(processed_data),
-            columns=processed_data.columns
+        # 2. Create interaction features for highly correlated pairs
+        if is_training:
+            # Only compute correlation pairs during training
+            correlation_matrix = X_processed.corr()
+            columns = X_processed.columns.tolist()
+            self.interaction_pairs = []
+            for i in range(len(columns)):
+                for j in range(i+1, len(columns)):
+                    if abs(correlation_matrix.loc[columns[i], columns[j]]) > 0.5:
+                        self.interaction_pairs.append((columns[i], columns[j]))
+        
+        # Create interaction features using stored pairs
+        new_features = {}
+        for col1, col2 in self.interaction_pairs:
+            if col1 in X_processed.columns and col2 in X_processed.columns:
+                new_features[f'{col1}_{col2}_interaction'] = X_processed[col1] * X_processed[col2]
+        
+        # Add all interaction features at once
+        for feature_name, feature_values in new_features.items():
+            X_processed[feature_name] = feature_values
+        
+        # 3. Create polynomial features for important columns
+        important_features = ['MDVP:Fo(Hz)', 'MDVP:Fhi(Hz)', 'MDVP:Flo(Hz)', 'MDVP:Jitter(%)']
+        squared_features = {}
+        for feature in important_features:
+            if feature in X_processed.columns:
+                squared_features[f'{feature}_squared'] = X_processed[feature] ** 2
+        
+        # Add all squared features at once
+        for feature_name, feature_values in squared_features.items():
+            X_processed[feature_name] = feature_values
+        
+        if is_training:
+            # Store feature names during training
+            self.feature_names = X_processed.columns.tolist()
+        else:
+            # Ensure test data has same features as training
+            missing_cols = set(self.feature_names) - set(X_processed.columns)
+            for col in missing_cols:
+                X_processed[col] = 0
+            # Ensure columns are in same order
+            X_processed = X_processed[self.feature_names]
+        
+        # 4. Scale the features
+        if not self.is_fitted:
+            X_processed = pd.DataFrame(
+                self.scaler.fit_transform(X_processed),
+                columns=X_processed.columns
+            )
+            self.is_fitted = True
+        else:
+            X_processed = pd.DataFrame(
+                self.scaler.transform(X_processed),
+                columns=X_processed.columns
+            )
+        
+        return X_processed
+    
+    def get_feature_importance(self) -> pd.DataFrame:
+        """
+        Get the importance of original features based on PCA loadings.
+        
+        Returns:
+            DataFrame with feature importance scores
+        """
+        if not self.is_fitted:
+            return pd.DataFrame()
+            
+        # Get the loadings for each principal component
+        loadings = pd.DataFrame(
+            self.pca.components_.T,
+            columns=[f'PC{i+1}' for i in range(self.pca.n_components_)],
+            index=self.pca.feature_names_in_
         )
         
-        return processed_data
-    
-    def apply_pca(self, X: pd.DataFrame) -> Tuple[pd.DataFrame, float]:
-        """Apply PCA for dimensionality reduction."""
-        # Fit and transform the data
-        X_pca = self.pca.fit_transform(X)
+        # Calculate feature importance as the sum of absolute loadings
+        importance = loadings.abs().sum(axis=1)
         
-        # Create DataFrame with component names
-        component_names = [f'PC{i+1}' for i in range(X_pca.shape[1])]
-        X_pca_df = pd.DataFrame(X_pca, columns=component_names)
-        
-        # Calculate explained variance ratio
-        explained_variance_ratio = self.pca.explained_variance_ratio_.sum()
-        
-        return X_pca_df, explained_variance_ratio
+        return pd.DataFrame({
+            'feature': importance.index,
+            'importance': importance.values
+        }).sort_values('importance', ascending=False)
     
     def select_features(self, X: pd.DataFrame, threshold: float = 0.01) -> pd.DataFrame:
         """Select features based on variance threshold."""
@@ -110,7 +187,20 @@ class FeatureEngineer:
         # Apply feature selection
         X = self.select_features(X)
         
-        # Apply PCA
-        X_pca, explained_variance = self.apply_pca(X)
+        return X  # Remove PCA for now as it's not necessary
+    
+    def apply_pca(self, X: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
+        """Apply PCA transformation to the data."""
+        if not self.is_fitted:
+            X_pca = pd.DataFrame(
+                self.pca.fit_transform(X),
+                columns=[f'PC{i+1}' for i in range(self.pca.n_components_)]
+            )
+            self.is_fitted = True
+        else:
+            X_pca = pd.DataFrame(
+                self.pca.transform(X),
+                columns=[f'PC{i+1}' for i in range(self.pca.n_components_)]
+            )
         
-        return X_pca 
+        return X_pca, self.pca.explained_variance_ratio_ 

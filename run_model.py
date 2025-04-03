@@ -1,128 +1,81 @@
 import pandas as pd
 import numpy as np
-from backend.ml.features.engineer import FeatureEngineer
-from backend.ml.models.train import ModelTrainer
-from backend.ml.explainability.explainer import ModelExplainer
+from sklearn.metrics import confusion_matrix, roc_curve, auc, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, roc_curve, auc
 import os
+import sys
 
-def create_sample_dataset(n_samples=100):
-    """Create a sample dataset with controlled noise for 94-98% accuracy"""
-    np.random.seed(42)
-    
-    # Base values for PD patients with more overlap
-    pd_base = {
-        'age': 65,
-        'gender': 1,
-        'bmi': 25,
-        'disease_duration': 5,
-        'updrs_score': 30,  # Reduced from 35
-        'jitter': 0.004,    # Closer to non-PD
-        'shimmer': 0.025,   # Closer to non-PD
-        'nhr': 0.015,       # Closer to non-PD
-        'hnr': 22,         # Closer to non-PD
-        'rpde': 0.4,       # Closer to non-PD
-        'dfa': 0.6,        # Closer to non-PD
-        'ppe': 0.15        # Closer to non-PD
-    }
-    
-    # Base values for non-PD patients
-    non_pd_base = {
-        'age': 62,         # Closer to PD
-        'gender': 0,
-        'bmi': 26,        # Closer to PD
-        'disease_duration': 0,
-        'updrs_score': 10, # Increased from 5
-        'jitter': 0.003,   # Closer to PD
-        'shimmer': 0.02,   # Closer to PD
-        'nhr': 0.012,      # Closer to PD
-        'hnr': 23,        # Closer to PD
-        'rpde': 0.3,      # Closer to PD
-        'dfa': 0.55,      # Closer to PD
-        'ppe': 0.12       # Closer to PD
-    }
-    
-    # Generate balanced dataset
-    n_pd = n_samples // 2
-    n_non_pd = n_samples - n_pd
-    
-    # Create PD patients with controlled noise
-    pd_data = []
-    for _ in range(n_pd):
-        patient = {}
-        for key, value in pd_base.items():
-            # Add larger random noise (15-20% of base value)
-            noise = np.random.normal(0, value * 0.18)
-            patient[key] = max(0, value + noise)  # Ensure non-negative values
-        patient['target'] = 1
-        pd_data.append(patient)
-    
-    # Create non-PD patients with controlled noise
-    non_pd_data = []
-    for _ in range(n_non_pd):
-        patient = {}
-        for key, value in non_pd_base.items():
-            # Add larger random noise (15-20% of base value)
-            noise = np.random.normal(0, value * 0.18)
-            patient[key] = max(0, value + noise)  # Ensure non-negative values
-        patient['target'] = 0
-        non_pd_data.append(patient)
-    
-    # Combine and shuffle the data
-    all_data = pd_data + non_pd_data
-    np.random.shuffle(all_data)
-    
-    # Add some random flips to create realistic error rate
-    df = pd.DataFrame(all_data)
-    flip_mask = np.random.random(len(df)) < 0.06  # ~6% error rate
-    df.loc[flip_mask, 'target'] = 1 - df.loc[flip_mask, 'target']
-    
-    return df
+# Add the project root to Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def plot_confusion_matrix(y_true, y_pred):
-    """Plot confusion matrix with enhanced visualization"""
-    cm = confusion_matrix(y_true, y_pred)
+from backend.ml.features.engineer import FeatureEngineer
+from backend.ml.explainability.explainer import ModelExplainer
+
+def load_dataset():
+    """Load the processed Kaggle dataset."""
+    X_train = pd.read_csv('data/X_train.csv')
+    X_test = pd.read_csv('data/X_test.csv')
+    y_train = pd.read_csv('data/y_train.csv').values.ravel()
+    y_test = pd.read_csv('data/y_test.csv').values.ravel()
+    return X_train, X_test, y_train, y_test
+
+def plot_confusion_matrix(cm, save_path):
     plt.figure(figsize=(10, 8))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', square=True)
-    plt.title('Confusion Matrix', fontsize=14, pad=20)
-    plt.ylabel('True Label', fontsize=12)
-    plt.xlabel('Predicted Label', fontsize=12)
-    plt.xticks([0.5, 1.5], ['No PD', 'PD'], fontsize=10)
-    plt.yticks([0.5, 1.5], ['No PD', 'PD'], fontsize=10)
+    plt.title('Confusion Matrix', fontsize=16, pad=20)
+    plt.xlabel('Predicted', fontsize=14)
+    plt.ylabel('Actual', fontsize=14)
     plt.tight_layout()
-    plt.savefig('model_visualizations/confusion_matrix.png', dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_roc_curve(y_true, y_pred_proba):
-    """Plot ROC curve with enhanced visualization"""
-    fpr, tpr, _ = roc_curve(y_true, y_pred_proba)
-    roc_auc = auc(fpr, tpr)
+def plot_roc_curve(fpr, tpr, auc, save_path):
     plt.figure(figsize=(10, 8))
-    plt.plot(fpr, tpr, color='darkorange', lw=3, label=f'ROC curve (AUC = {roc_auc:.3f})')
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.plot(fpr, tpr, color='#2a5298', lw=2, label=f'ROC curve (AUC = {auc:.3f})')
+    plt.plot([0, 1], [0, 1], color='#dc3545', lw=2, linestyle='--', label='Random Classifier')
+    plt.fill_between(fpr, tpr, alpha=0.3, color='#2a5298')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate', fontsize=12)
-    plt.ylabel('True Positive Rate', fontsize=12)
-    plt.title('Receiver Operating Characteristic (ROC) Curve', fontsize=14, pad=20)
+    plt.xlabel('False Positive Rate', fontsize=14)
+    plt.ylabel('True Positive Rate', fontsize=14)
+    plt.title('Receiver Operating Characteristic (ROC) Curve', fontsize=16, pad=20)
     plt.legend(loc="lower right", fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('model_visualizations/roc_curve.png', dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_prediction_distribution(y_pred_proba):
-    """Plot distribution of prediction probabilities with enhanced visualization"""
+def plot_prediction_distribution(y_pred_proba, y_test, save_path):
     plt.figure(figsize=(12, 6))
-    plt.hist(y_pred_proba, bins=30, edgecolor='black', alpha=0.7)
-    plt.title('Distribution of Prediction Probabilities', fontsize=14, pad=20)
-    plt.xlabel('Prediction Probability', fontsize=12)
-    plt.ylabel('Count', fontsize=12)
+    sns.histplot(data=pd.DataFrame({
+        'Probability': y_pred_proba,
+        'Class': ['PD' if y == 1 else 'No PD' for y in y_test]
+    }), x='Probability', hue='Class', bins=20, alpha=0.6)
+    plt.title('Distribution of Prediction Probabilities', fontsize=16, pad=20)
+    plt.xlabel('Prediction Probability', fontsize=14)
+    plt.ylabel('Count', fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('model_visualizations/prediction_distribution.png', dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+def plot_feature_importance(feature_importance, feature_names, save_path):
+    plt.figure(figsize=(12, 8))
+    importance_df = pd.DataFrame({
+        'Feature': feature_names,
+        'Importance': feature_importance
+    }).sort_values('Importance', ascending=True)
+    
+    sns.barplot(data=importance_df, x='Importance', y='Feature', palette='viridis')
+    plt.title('Feature Importance Analysis', fontsize=16, pad=20)
+    plt.xlabel('Importance Score', fontsize=14)
+    plt.ylabel('Feature', fontsize=14)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close()
 
 def main():
@@ -130,34 +83,65 @@ def main():
     os.makedirs('model_visualizations', exist_ok=True)
     os.makedirs('model_explanations', exist_ok=True)
     
-    # Create sample dataset
-    print("Generating sample dataset...")
-    data = create_sample_dataset(n_samples=100)
-    
-    # Separate features and target
-    X = data.drop('target', axis=1)
-    y = data['target']
+    # Load dataset
+    print("Loading dataset...")
+    X_train, X_test, y_train, y_test = load_dataset()
     
     # Initialize components
     feature_engineer = FeatureEngineer()
-    model_trainer = ModelTrainer()
     
     # Preprocess data
     print("Preprocessing data...")
-    X_processed = feature_engineer.preprocess_data(X)
+    X_train_processed = feature_engineer.preprocess_data(X_train, is_training=True)
+    X_test_processed = feature_engineer.preprocess_data(X_test, is_training=False)
     
-    # Train model
-    print("Training model...")
-    model_output = model_trainer.train_rf(X_processed, y)
-    model = model_output['model']
+    # Define parameter grid for GridSearchCV
+    param_grid = {
+        'n_estimators': [500, 1000],
+        'max_depth': [10, 15, 20],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2],
+        'max_features': ['sqrt', 'log2'],
+        'class_weight': ['balanced', 'balanced_subsample']
+    }
+    
+    # Initialize base model
+    base_model = RandomForestClassifier(random_state=42, n_jobs=-1)
+    
+    # Perform grid search with cross-validation
+    print("\nPerforming grid search with cross-validation...")
+    grid_search = GridSearchCV(
+        estimator=base_model,
+        param_grid=param_grid,
+        cv=5,
+        scoring='f1',
+        n_jobs=-1,
+        verbose=2
+    )
+    
+    # Fit grid search
+    grid_search.fit(X_train_processed, y_train)
+    
+    # Print best parameters and score
+    print("\nBest parameters:", grid_search.best_params_)
+    print("Best cross-validation score:", grid_search.best_score_)
+    
+    # Get the best model
+    model = grid_search.best_estimator_
     
     # Make predictions
-    print("Making predictions...")
-    y_pred = model.predict(X_processed)
-    y_pred_proba = model.predict_proba(X_processed)[:, 1]
+    print("\nMaking predictions...")
+    y_pred = model.predict(X_test_processed)
+    y_pred_proba = model.predict_proba(X_test_processed)[:, 1]
     
     # Calculate metrics
-    metrics = model_trainer.calculate_metrics(y, y_pred)
+    metrics = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred),
+        'f1': f1_score(y_test, y_pred)
+    }
+    
     print("\nModel Performance:")
     print(f"Accuracy: {metrics['accuracy']:.3f}")
     print(f"Precision: {metrics['precision']:.3f}")
@@ -166,55 +150,38 @@ def main():
     
     # Generate visualizations
     print("\nGenerating visualizations...")
-    plot_confusion_matrix(y, y_pred)
-    plot_roc_curve(y, y_pred_proba)
-    plot_prediction_distribution(y_pred_proba)
+    cm = confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(cm, 'model_visualizations/confusion_matrix.png')
+    
+    fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+    roc_auc = auc(fpr, tpr)
+    plot_roc_curve(fpr, tpr, roc_auc, 'model_visualizations/roc_curve.png')
+    
+    plot_prediction_distribution(y_pred_proba, y_test, 'model_visualizations/prediction_distribution.png')
     
     # Initialize model explainer
     print("\nInitializing model explainer...")
-    explainer = ModelExplainer(model, X_processed.columns.tolist())
+    explainer = ModelExplainer(model, X_train_processed.columns.tolist())
     
     # Generate explanations
     print("Generating explanations...")
-    shap_explanation = explainer.get_shap_values(X_processed[:10])
+    shap_explanation = explainer.get_shap_values(X_test_processed[:10])
     
     # Get feature importance from the model directly
     feature_importance = pd.DataFrame({
-        'feature': X_processed.columns,
+        'feature': X_train_processed.columns,
         'importance': model.feature_importances_
-    }).sort_values('importance', ascending=True)  # Sort ascending for better visualization
+    }).sort_values('importance', ascending=True)
     
     # Plot feature importance
-    plt.figure(figsize=(12, 8))
-    sns.barplot(y='feature', x='importance', data=feature_importance, palette='viridis')
-    plt.title('Feature Importance', fontsize=14, pad=20)
-    plt.xlabel('Importance', fontsize=12)
-    plt.ylabel('Feature', fontsize=12)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig('model_visualizations/feature_importance.png', dpi=300, bbox_inches='tight')
-    plt.close()
+    plot_feature_importance(feature_importance['importance'], feature_importance['feature'], 'model_visualizations/feature_importance.png')
     
     # Print predictions for first 10 patients
     print("\nPredictions for first 10 patients:")
     for i in range(10):
-        pred = "PD" if y_pred[i] == 1 else "No PD"
-        prob = y_pred_proba[i] * 100 if y_pred[i] == 1 else (1 - y_pred_proba[i]) * 100
-        print(f"Patient {i+1}: {pred} (Probability: {prob:.1f}%)")
-    
-    # Save explanation report
-    print("\nSaving explanation report...")
-    # Save SHAP values
-    pd.DataFrame(shap_explanation['shap_values']).to_csv('model_explanations/shap_values.csv', index=False)
-    # Save feature importance
-    feature_importance.to_csv('model_explanations/feature_importance.csv', index=False)
-    
-    return {
-        'metrics': metrics,
-        'predictions': y_pred[:10],
-        'probabilities': y_pred_proba[:10],
-        'feature_importance': feature_importance
-    }
+        prob = y_pred_proba[i]
+        prediction = "PD" if y_pred[i] == 1 else "No PD"
+        print(f"Patient {i+1}: {prediction} (Probability: {prob*100:.1f}%)")
 
 if __name__ == "__main__":
     main() 
